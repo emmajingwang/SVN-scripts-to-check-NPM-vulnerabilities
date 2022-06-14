@@ -1,0 +1,61 @@
+import os, subprocess,re,smtplib
+#import shutil
+
+os.chdir('C:')
+#create a new dir if it not exists
+dir_path="C:/svn-tests"
+if not os.path.exists(dir_path):
+    os.mkdir(dir_path)
+
+#create an arr to include all prjects 
+projects=['schoolbus','hmcr','hets']
+output=''
+
+#checkout the target project
+for project in projects:
+    #go to target dir to checkout svn projects
+    os.chdir(dir_path)
+    os.system ('svn checkout https://142.36.211.102/svn/{}'.format(project))
+
+    #go to the target project client dir to test npm package
+    newDir = 'C:/svn-tests/{}/client'.format(project)
+    os.chdir(newDir)
+
+    #save the results as string
+    os.system('npm install')
+    results = subprocess.getoutput("npm audit --production")
+
+    #split the results into lines and look for the one with vulnerabilities
+    output+='{}: '.format(project)
+    output = 'This test project: '
+    autoFix=True
+    for line in re.split('\n',results):
+        if re.search("vulnerabilities", line):
+            output += line +'\n'
+            autoFix = False
+    
+    #if not find keyword, need to autoFix to check again!
+    if autoFix:
+        output+="autofixed by npm audit fix --force, need to run the project to test" + '\n'
+        os.system("npm audit fix --force")
+        results = subprocess.getoutput("npm audit --production")
+        for line in re.split('\n',results):
+            if re.search("vulnerabilities", line):
+                output += line +'\n'
+
+#send results by email
+sender = 'emma.wang@gov.bc.ca'
+receivers=['emma.wang@gov.bc.ca']
+
+message = """From: From Emma <emma.wang@gov.bc.ca>
+To: To Emma <emma.wang@gov.bc.ca>
+Subject: SMTP e-mail test for svn vuls check 
+
+""" + output
+
+try:
+    smtpObj = smtplib.SMTP('apps.smtp.gov.bc.ca')
+    smtpObj.sendmail(sender, receivers, message)         
+    print ("Successfully sent email")
+except smtplib.SMTPException:
+    print ("Error: unable to send email") 
