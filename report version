@@ -1,0 +1,42 @@
+import os, subprocess,re,smtplib
+
+os.chdir('C:')
+#create a new dir if it not exists
+dir_path="C:/svn-tests"
+if not os.path.exists(dir_path):
+    os.mkdir(dir_path)
+
+#create an arr to include all prjects 
+projects=['schoolbus','hmcr','hets']
+output=''
+
+#checkout the target project
+for project in projects:
+    #go to target dir to checkout svn projects
+    os.chdir(dir_path)
+    os.system ('svn checkout https://142.36.211.102/svn/{}'.format(project))
+
+    #go to the target project client dir to test npm package
+    newDir = 'C:/svn-tests/{}/client'.format(project)
+    os.chdir(newDir)
+
+    #save the results as string
+    results = subprocess.getoutput("npm audit report")
+    output+='{}: '.format(project) + results + '\n\n\n'
+
+#send results by email
+sender = 'emma.wang@gov.bc.ca'
+receivers=['bruce.wang@gov.bc.ca','emma.wang@gov.bc.ca']
+
+message = """From: From Emma <emma.wang@gov.bc.ca>
+To: To Bruce <bruce.wang@gov.bc.ca>
+Subject: SMTP e-mail test for svn vuls check 
+
+""" + output
+
+try:
+    smtpObj = smtplib.SMTP('apps.smtp.gov.bc.ca')
+    smtpObj.sendmail(sender, receivers, message)         
+    print ("Successfully sent email")
+except smtplib.SMTPException:
+    print ("Error: unable to send email") 
