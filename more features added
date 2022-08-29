@@ -54,7 +54,7 @@ Subject: SMTP e-mail test for svn vuls check
 """ + output
 
 try:
-    smtpObj = smtplib.SMTP('apps.smtp.gov.bc.ca')
+    smtpObj = smtplib.SMTP('xxxxxxxxxxxxx')
     smtpObj.sendmail(sender, receivers, message)         
     print ("Successfully sent email")
 except smtplib.SMTPException:
